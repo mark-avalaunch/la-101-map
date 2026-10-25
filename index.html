@@ -219,7 +219,10 @@ document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () =
   render();
 }));
 render();
-map.fitBounds(L.latLngBounds(R.map(r => [r.lat, r.lng]).concat([HOME])).pad(0.05));
+// Fit after layout settles; fitting against a not-yet-sized container lands at zoom 0.
+const fitAll = () => { map.invalidateSize(); map.fitBounds(L.latLngBounds(R.map(r => [r.lat, r.lng]).concat([HOME])).pad(0.05)); };
+fitAll();
+if (document.readyState !== "complete") addEventListener("load", fitAll, { once: true });
 </script>
 </body>
 </html>
