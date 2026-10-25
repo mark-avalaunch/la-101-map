@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>101 Best, From Mar Vista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Layout: full-height split — ranked list rail on the left, map fills the rest; stacks map-over-list on phones. */
+:root {
+  --bg: #f3f5f4; --panel: #ffffff; --fg: #18211f; --muted: #5d6b67; --line: #dde3e1;
+  --accent: #0f6b5c; --home: #d1462f;
+  --p1: #7fb7a8; --p2: #3f8f7e; --p3: #b06a2c; --p4: #7a2f4d;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111615; --panel: #171e1c; --fg: #e6eeeb; --muted: #93a39e; --line: #2a3431;
+  --accent: #4fc2aa; --home: #ff6a4f; --p1: #5f9c8d; --p2: #4fc2aa; --p3: #e09550; --p4: #d0668f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111615; --panel: #171e1c; --fg: #e6eeeb; --muted: #93a39e; --line: #2a3431;
+  --accent: #4fc2aa; --home: #ff6a4f; --p1: #5f9c8d; --p2: #4fc2aa; --p3: #e09550; --p4: #d0668f; color-scheme: dark }
+
+* { box-sizing: border-box }
+html, body { height: 100%; margin: 0 }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--body); display: grid; grid-template-columns: 400px 1fr; }
+aside { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line) }
+header { padding: 18px 18px 12px; display: grid; gap: 4px }
+h1 { font: 700 26px/1.05 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance }
+.sub { color: var(--muted); font-size: 13px }
+.controls { padding: 0 18px 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--line) }
+input[type=search], select { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.row select { flex: 1; min-width: 0 }
+.chips { display: flex; gap: 6px }
+.chip { font: 600 12px var(--mono); border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 4px 10px; cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--panel); border-color: var(--fg) }
+.chip:focus-visible, button:focus-visible, li:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.count { font-size: 12px; color: var(--muted) }
+ol { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0 }
+li { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: start; padding: 10px 18px; border-bottom: 1px solid var(--line); cursor: pointer }
+li:hover, li.active { background: var(--bg) }
+.rank { font: 500 13px var(--mono); color: var(--muted); padding-top: 2px; font-variant-numeric: tabular-nums }
+.name { font-weight: 600; min-width: 0 }
+.meta { color: var(--muted); font-size: 12.5px }
+.dist { font: 500 12px var(--mono); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
+.price { display: block; margin-top: 2px }
+#map { height: 100%; min-height: 0; background: var(--bg) }
+
+.pin { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 10px var(--mono); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35) }
+.pin.p1 { background: var(--p1) } .pin.p2 { background: var(--p2) } .pin.p3 { background: var(--p3) } .pin.p4 { background: var(--p4) }
+.pin.hl { transform: scale(1.35); z-index: 1000 }
+.homepin { width: 34px; height: 34px; border-radius: 50%; background: var(--home); border: 3px solid #fff; box-shadow: 0 0 0 6px color-mix(in srgb, var(--home) 25%, transparent), 0 2px 6px rgba(0,0,0,.4); display: grid; place-items: center }
+.homepin svg { width: 16px; height: 16px; fill: #fff }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--fg) }
+.leaflet-popup-content { margin: 14px 16px; font: 13.5px/1.45 var(--body) }
+.pop h3 { font: 700 18px/1.15 var(--display); margin: 2px 0 4px }
+.pop .eyebrow { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .06em; text-transform: uppercase }
+.pop .addr { margin: 6px 0; user-select: all }
+.pop .links { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px }
+.pop .links a { font-weight: 600; font-size: 12.5px; text-decoration: none; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line); color: var(--fg) }
+.pop .links a.yelp { background: #d32323; border-color: #d32323; color: #fff }
+.pop .note { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: color-mix(in srgb, var(--p3) 14%, transparent); font-size: 12.5px }
+.legend { background: var(--panel); color: var(--fg); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); font: 12px var(--body); display: grid; gap: 4px }
+.legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px }
+.ring-label { font: 500 11px var(--mono); color: var(--muted); background: none; border: none; white-space: nowrap }
+
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 52vh 1fr }
+  #map { order: -1 }
+  aside { border-right: 0; border-top: 1px solid var(--line) }
+}
+</style>
+</head>
+<body>
+<aside>
+  <header>
+    <h1>LA Times 101 Best, mapped from home</h1>
+    <div class="sub">Home: Mar Vista (approximate) · distances are straight-line miles</div>
+  </header>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search name, cuisine, neighborhood…" aria-label="Search restaurants">
+    <div class="row">
+      <div class="chips" role="group" aria-label="Price filter">
+        <button class="chip" data-p="1" aria-pressed="true">$</button>
+        <button class="chip" data-p="2" aria-pressed="true">$$</button>
+        <button class="chip" data-p="3" aria-pressed="true">$$$</button>
+        <button class="chip" data-p="4" aria-pressed="true">$$$$</button>
+      </div>
+      <select id="sort" aria-label="Sort">
+        <option value="dist">Closest first</option>
+        <option value="rank">By rank (#1 first)</option>
+      </select>
+    </div>
+    <div class="row">
+      <select id="maxd" aria-label="Distance limit">
+        <option value="999">Any distance</option>
+        <option value="5">Within 5 mi</option>
+        <option value="10">Within 10 mi</option>
+        <option value="15">Within 15 mi</option>
+        <option value="25">Within 25 mi</option>
+      </select>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+  <ol id="list"></ol>
+</aside>
+<div id="map"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const HOME = [33.99, -118.43];
+const R = [{"name": "Mish Delicatessen", "hood": "Fairfax", "cuisine": "Jewish", "price": "$$", "rank": 101, "address": "127 S La Brea Ave, Los Angeles, CA 90036", "website": null, "note": null, "confidence": "medium", "lat": 34.072877, "lng": -118.344099, "src": "census"}, {"name": "Jade Rabbit", "hood": "Santa Monica", "cuisine": "Chinese American", "price": "$", "rank": 100, "address": "2301 Santa Monica Blvd, Santa Monica, CA 90404", "website": null, "note": null, "confidence": "high", "lat": 34.030132, "lng": -118.478077, "src": "osm"}, {"name": "Loli Farms", "hood": "Pasadena", "cuisine": "Peruvian", "price": "$", "rank": 99, "address": "885 E California Blvd, Pasadena, CA 91106", "website": null, "note": null, "confidence": "high", "lat": 34.135933, "lng": -118.132108, "src": "census"}, {"name": "Mario's Butcher Shop", "hood": "Newport Beach", "cuisine": "Butcher Shop", "price": "$", "rank": 98, "address": "1000 N Bristol St, Newport Beach, CA 92660", "website": null, "note": null, "confidence": "high", "lat": 33.657979, "lng": -117.867485, "src": "census"}, {"name": "Barsha", "hood": "Hermosa Beach", "cuisine": "Middle Eastern", "price": "$$", "rank": 97, "address": "1141 Aviation Blvd, Hermosa Beach, CA 90254", "website": null, "note": null, "confidence": "high", "lat": 33.865317, "lng": -118.386917, "src": "census"}, {"name": "Colossus Harbor", "hood": "San Pedro", "cuisine": "Bakery", "price": "$$", "rank": 96, "address": "511 S Harbor Blvd, San Pedro, CA 90731", "website": "https://www.exploretock.com/colossusbread/", "note": null, "confidence": "medium", "lat": 33.739529, "lng": -118.279998, "src": "census"}, {"name": "Al Baraka Restaurant", "hood": "Anaheim", "cuisine": "Palestinian", "price": "$$", "rank": 95, "address": "413 S Brookhurst St, Anaheim, CA 92804", "website": null, "note": null, "confidence": "high", "lat": 33.827434, "lng": -117.958993, "src": "census"}, {"name": "Lum-Ka-Naad", "hood": "Northridge", "cuisine": "Thai", "price": "$$", "rank": 94, "address": "8910 Reseda Blvd, Northridge, CA 91324", "website": null, "note": null, "confidence": "medium", "lat": 34.232098, "lng": -118.536015, "src": "census"}, {"name": "Borit Gogae", "hood": "Koreatown", "cuisine": "Korean", "price": "$$", "rank": 93, "address": "3464 W 8th St, Los Angeles, CA 90005", "website": null, "note": null, "confidence": "high", "lat": 34.057623, "lng": -118.305516, "src": "census"}, {"name": "Macheen", "hood": "Boyle Heights", "cuisine": "Mexican", "price": "$", "rank": 92, "address": "2633 E Cesar E Chavez Ave, Los Angeles, CA 90033", "website": null, "note": null, "confidence": "medium", "lat": 34.045409, "lng": -118.204473, "src": "census"}, {"name": "Phởholic", "hood": "Garden Grove", "cuisine": "Vietnamese", "price": "$$", "rank": 91, "address": "14932 Bushard St, Westminster, CA 92683", "website": "https://phoholic.site", "note": null, "confidence": "medium", "lat": 33.745823, "lng": -117.963486, "src": "census"}, {"name": "Jacaranda", "hood": "Hollywood", "cuisine": "Californian", "price": "$$$$", "rank": 90, "address": "6623 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "medium", "lat": 34.083513, "lng": -118.338863, "src": "census"}, {"name": "Biriyani Kabob House", "hood": "Koreatown", "cuisine": "Halal", "price": "$", "rank": 89, "address": "3525 W 3rd St, Los Angeles, CA 90020", "website": null, "note": null, "confidence": "high", "lat": 34.069105, "lng": -118.292864, "src": "census"}, {"name": "Saqartvelo", "hood": "Van Nuys", "cuisine": "Georgian", "price": "$$", "rank": 88, "address": "15317 Vanowen St, Van Nuys, CA 91405", "website": null, "note": null, "confidence": "high", "lat": 34.193974, "lng": -118.46659, "src": "census"}, {"name": "Perse", "hood": "Brentwood", "cuisine": "Persian", "price": "$$$", "rank": 87, "address": "11677 San Vicente Blvd, Suite 315, Los Angeles, CA 90049", "website": null, "note": null, "confidence": "medium", "lat": 34.053934, "lng": -118.464963, "src": "census"}, {"name": "Tainos L.A.", "hood": "Woodland Hills", "cuisine": "Puerto Rican", "price": "$", "rank": 86, "address": "22757 Ventura Blvd, Woodland Hills, CA 91364", "website": null, "note": null, "confidence": "medium", "lat": 34.166427, "lng": -118.622246, "src": "census"}, {"name": "Cosetta", "hood": "Santa Monica", "cuisine": "Pizza", "price": "$$", "rank": 85, "address": "3150 Ocean Park Blvd, Santa Monica, CA 90405", "website": "https://cosettala.com", "note": null, "confidence": "high", "lat": 34.020512, "lng": -118.452743, "src": "census"}, {"name": "Found Oyster", "hood": "East Hollywood", "cuisine": "Seafood", "price": "$$", "rank": 84, "address": "4880 Fountain Ave, Los Angeles, CA 90029", "website": null, "note": null, "confidence": "high", "lat": 34.095346, "lng": -118.295613, "src": "census"}, {"name": "Bao Kee Cafe", "hood": "South El Monte", "cuisine": "Cantonese", "price": "$", "rank": 83, "address": "9510 Garvey Ave, South El Monte, CA 91733", "website": "https://baokeecafeca.com", "note": null, "confidence": "high", "lat": 34.062654, "lng": -118.062654, "src": "census"}, {"name": "Delmy's Pupusas", "hood": "Atwater Village", "cuisine": "Salvadoran", "price": "$", "rank": 82, "address": "3700 W Sunset Blvd, Los Angeles, CA 90026", "website": null, "note": null, "confidence": "low", "lat": 34.090474, "lng": -118.27783, "src": "census"}, {"name": "Barbacoa Ramirez", "hood": "Arleta", "cuisine": "Mexican", "price": "$", "rank": 81, "address": "14263 Hoyt St, Arleta, CA 91331", "website": null, "note": null, "confidence": "low", "lat": 34.249051, "lng": -118.443953, "src": "census"}, {"name": "Barra Santos", "hood": "Cypress Park", "cuisine": "Portuguese", "price": "$$", "rank": 80, "address": "1215 Cypress Ave, Los Angeles, CA 90065", "website": null, "note": null, "confidence": "high", "lat": 34.095551, "lng": -118.228203, "src": "census"}, {"name": "Badmaash Venice", "hood": "Venice", "cuisine": "Indian", "price": "$$", "rank": 79, "address": "1616 Abbot Kinney Blvd, Venice, CA 90291", "website": "https://badmaashla.com", "note": null, "confidence": "high", "lat": 33.989721, "lng": -118.463596, "src": "census"}, {"name": "Lorenzo California", "hood": "Beverly Hills", "cuisine": "Sandwich Shop", "price": "$$", "rank": 78, "address": "9529 S Santa Monica Blvd, Beverly Hills, CA 90210", "website": null, "note": null, "confidence": "high", "lat": 34.070445, "lng": -118.40469, "src": "census"}, {"name": "Stir Crazy", "hood": "Hollywood", "cuisine": "Wine Bar", "price": "$$", "rank": 77, "address": "6903 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.0835, "lng": -118.341684, "src": "census"}, {"name": "Tacos La Carreta", "hood": "Long Beach", "cuisine": "Mexican", "price": "$", "rank": 76, "address": "3480 E 69th St, Long Beach, CA 90805", "website": null, "note": null, "confidence": "medium", "lat": 33.8801, "lng": -118.151908, "src": "census"}, {"name": "Sqirl", "hood": "East Hollywood", "cuisine": "New American", "price": "$$", "rank": 75, "address": "720 N Virgil Ave, Los Angeles, CA 90029", "website": null, "note": null, "confidence": "high", "lat": 34.084407, "lng": -118.286768, "src": "census"}, {"name": "Mae Malai", "hood": "Los Feliz", "cuisine": "Thai", "price": "$", "rank": 74, "address": "5445 Hollywood Blvd, Los Angeles, CA 90027", "website": null, "note": null, "confidence": "high", "lat": 34.101794, "lng": -118.308135, "src": "census"}, {"name": "Kuya Lord", "hood": "East Hollywood", "cuisine": "Filipino", "price": "$$", "rank": 73, "address": "5003 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.083566, "lng": -118.309252, "src": "census"}, {"name": "Osteria Mozza", "hood": "Hancock Park", "cuisine": "Italian", "price": "$$$", "rank": 72, "address": "6602 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.083399, "lng": -118.338671, "src": "census"}, {"name": "Lugya'h (Maydan Market)", "hood": "West Adams", "cuisine": "Global", "price": "$$", "rank": 71, "address": "4301 W Jefferson Blvd, Los Angeles, CA 90016", "website": null, "note": null, "confidence": "high", "lat": 34.025609, "lng": -118.342934, "src": "census"}, {"name": "Petit Trois", "hood": "Hollywood", "cuisine": "French", "price": "$$$", "rank": 70, "address": "718 N Highland Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.083828, "lng": -118.338515, "src": "census"}, {"name": "RVR", "hood": "Venice", "cuisine": "Japanese", "price": "$$", "rank": 69, "address": "1305 Abbot Kinney Blvd, Venice, CA 90291", "website": "https://rvr.la", "note": null, "confidence": "high", "lat": 33.991175, "lng": -118.467859, "src": "census"}, {"name": "Olive & Rose", "hood": "Long Beach", "cuisine": "Farm-to-table", "price": "$$$", "rank": 68, "address": "255 Atlantic Ave, Long Beach, CA 90802", "website": null, "note": null, "confidence": "high", "lat": 33.770127, "lng": -118.185098, "src": "census"}, {"name": "Rustic Canyon", "hood": "Santa Monica", "cuisine": "American", "price": "$$$", "rank": 67, "address": "1119 Wilshire Blvd, Santa Monica, CA 90401", "website": "https://www.rusticcanyonrestaurant.com", "note": null, "confidence": "high", "lat": 34.025042, "lng": -118.491326, "src": "osm"}, {"name": "Aunt Yvette's Kitchen", "hood": "Eagle Rock", "cuisine": "Ethiopian", "price": "$$", "rank": 66, "address": "1743 Colorado Blvd, Los Angeles, CA 90041", "website": null, "note": null, "confidence": "high", "lat": 34.139511, "lng": -118.205104, "src": "census"}, {"name": "Budonoki", "hood": "East Hollywood", "cuisine": "Japanese", "price": "$$", "rank": 65, "address": "654 N Virgil Ave, Los Angeles, CA 90004", "website": null, "note": null, "confidence": "high", "lat": 34.082769, "lng": -118.286753, "src": "census"}, {"name": "Two Hommés", "hood": "Inglewood", "cuisine": "West African", "price": "$$", "rank": 64, "address": "902 N La Brea Ave, Inglewood, CA 90302", "website": null, "note": null, "confidence": "high", "lat": 33.974655, "lng": -118.357572, "src": "census"}, {"name": "Yang's Kitchen", "hood": "Alhambra", "cuisine": "Chinese", "price": "$$", "rank": 63, "address": "112 W Main St, Alhambra, CA 91801", "website": null, "note": null, "confidence": "high", "lat": 34.094537, "lng": -118.128044, "src": "census"}, {"name": "Tacos Los Cholos", "hood": "Huntington Park", "cuisine": "Mexican", "price": "$", "rank": 62, "address": "7127 Pacific Blvd, Huntington Park, CA 90255", "website": null, "note": null, "confidence": "high", "lat": 33.974885, "lng": -118.225255, "src": "census"}, {"name": "Bridgetown Roti", "hood": "East Hollywood", "cuisine": "Caribbean", "price": "$", "rank": 61, "address": "858 N Vermont Ave, Los Angeles, CA 90029", "website": null, "note": null, "confidence": "medium", "lat": 34.08688, "lng": -118.291652, "src": "census"}, {"name": "Wilde's", "hood": "Silver Lake", "cuisine": "British", "price": "$$", "rank": 60, "address": "1850 Hillhurst Ave, Los Angeles, CA 90027", "website": null, "note": null, "confidence": "high", "lat": 34.104569, "lng": -118.287343, "src": "census"}, {"name": "Mini Kabob", "hood": "Glendale", "cuisine": "Armenian", "price": "$$", "rank": 59, "address": "313 1/2 W Vine St, Glendale, CA 91204", "website": null, "note": null, "confidence": "high", "lat": 34.140904, "lng": -118.258271, "src": "census"}, {"name": "Tsubaki", "hood": "Echo Park", "cuisine": "Japanese", "price": "$$", "rank": 58, "address": "1356 Allison Ave, Los Angeles, CA 90026", "website": null, "note": null, "confidence": "high", "lat": 34.07314, "lng": -118.251952, "src": "census"}, {"name": "Taquearte", "hood": "Pico Rivera", "cuisine": "Campechano", "price": "$", "rank": 57, "address": "4518 1/2 Rosemead Blvd, Pico Rivera, CA 90660", "website": null, "note": null, "confidence": "medium", "lat": 34.008601, "lng": -118.080756, "src": "osm"}, {"name": "Majordomo", "hood": "Chinatown", "cuisine": "American", "price": "$$$", "rank": 56, "address": "1725 Naud St, Los Angeles, CA 90012", "website": null, "note": null, "confidence": "high", "lat": 34.068896, "lng": -118.226233, "src": "census"}, {"name": "Lucia", "hood": "Beverly Grove", "cuisine": "Caribbean", "price": "$$", "rank": 55, "address": "351 N Fairfax Ave, Los Angeles, CA 90036", "website": null, "note": null, "confidence": "high", "lat": 34.077176, "lng": -118.361505, "src": "census"}, {"name": "Bistro Na's", "hood": "Temple City", "cuisine": "Chinese", "price": "$$$", "rank": 54, "address": "9055 Las Tunas Dr, Suite 105, Temple City, CA 91780", "website": null, "note": null, "confidence": "high", "lat": 34.104723, "lng": -118.071013, "src": "census"}, {"name": "A Tí", "hood": "Echo Park", "cuisine": "Mexican", "price": "$$", "rank": 53, "address": "1498 Sunset Blvd, Los Angeles, CA 90026", "website": "https://atilosangeles.com", "note": null, "confidence": "medium", "lat": 34.075751, "lng": -118.255167, "src": "census"}, {"name": "Pizzeria Sei", "hood": "Pico-Robertson", "cuisine": "Pizza", "price": "$$", "rank": 52, "address": "8781 W Pico Blvd, Los Angeles, CA 90035", "website": "https://www.pizzeriasei.com/", "note": null, "confidence": "medium", "lat": 34.054758, "lng": -118.383354, "src": "census"}, {"name": "Moo's Craft Barbecue", "hood": "Lincoln Heights", "cuisine": "Barbecue", "price": "$$", "rank": 51, "address": "2118 N Broadway, Los Angeles, CA 90031", "website": null, "note": null, "confidence": "high", "lat": 34.073227, "lng": -118.218636, "src": "census"}, {"name": "Yerord Mas", "hood": "Glendale", "cuisine": "Armenian", "price": "$$", "rank": 50, "address": "6800 San Fernando Rd, Glendale, CA 91201", "website": null, "note": null, "confidence": "medium", "lat": 34.171682, "lng": -118.296021, "src": "census"}, {"name": "Bar Etoile", "hood": "East Hollywood", "cuisine": "French", "price": "$$", "rank": 49, "address": "632 N Western Ave, Los Angeles, CA 90004", "website": null, "note": null, "confidence": "high", "lat": 34.08215, "lng": -118.30907, "src": "census"}, {"name": "Evil Cooks", "hood": "El Sereno", "cuisine": "Mexican", "price": "$$", "rank": 48, "address": "3333 N Eastern Ave, Los Angeles, CA 90032", "website": "https://evilcooksla.com", "note": null, "confidence": "medium", "lat": 34.084638, "lng": -118.178121, "src": "census"}, {"name": "Ammatolí", "hood": "Long Beach", "cuisine": "Middle Eastern", "price": "$$", "rank": 47, "address": "285 E 3rd St, Long Beach, CA 90802", "website": null, "note": null, "confidence": "medium", "lat": 33.770558, "lng": -118.189584, "src": "census"}, {"name": "Holy Basil Santa Monica", "hood": "Santa Monica", "cuisine": "Thai", "price": "$$", "rank": 46, "address": "2828 Santa Monica Blvd, Santa Monica, CA 90404", "website": null, "note": null, "confidence": "high", "lat": 34.034947, "lng": -118.472169, "src": "census"}, {"name": "Fat + Flour", "hood": "Culver City", "cuisine": "Bakery", "price": "$$", "rank": 45, "address": "11739 W Washington Blvd, Los Angeles, CA 90066", "website": null, "note": null, "confidence": "high", "lat": 33.999617, "lng": -118.418317, "src": "census"}, {"name": "Knife Pleat", "hood": "Costa Mesa", "cuisine": "French", "price": "$$$$", "rank": 44, "address": "3333 S Bristol St, Costa Mesa, CA 92626", "website": null, "note": null, "confidence": "high", "lat": 33.688201, "lng": -117.885743, "src": "census"}, {"name": "Le Dräq", "hood": "Downtown L.A.", "cuisine": "Eclectic", "price": "$$", "rank": 43, "address": "118 W 4th St, Los Angeles, CA 90013", "website": null, "note": null, "confidence": "high", "lat": 34.048468, "lng": -118.247851, "src": "census"}, {"name": "Destroyer", "hood": "Culver City", "cuisine": "Breakfast/Lunch", "price": "$$", "rank": 42, "address": "3578 Hayden Ave, Culver City, CA 90232", "website": "https://destroyer.la", "note": null, "confidence": "high", "lat": 34.024743, "lng": -118.381345, "src": "census"}, {"name": "Darkroom", "hood": "Santa Ana", "cuisine": "Eclectic", "price": "$$$", "rank": 41, "address": "3751 S Harbor Blvd, Suite C, Santa Ana, CA 92704", "website": null, "note": null, "confidence": "high", "lat": 33.697449, "lng": -117.919351, "src": "census"}, {"name": "Damian", "hood": "Downtown L.A.", "cuisine": "Mexican", "price": "$$$", "rank": 40, "address": "2132 E 7th Pl, Los Angeles, CA 90021", "website": null, "note": null, "confidence": "high", "lat": 34.033496, "lng": -118.229467, "src": "census"}, {"name": "Sushi Inaba", "hood": "Torrance", "cuisine": "Japanese", "price": "$$$$", "rank": 39, "address": "20920 Hawthorne Blvd, Suite 110, Torrance, CA 90503", "website": null, "note": null, "confidence": "medium", "lat": 33.840197, "lng": -118.353539, "src": "census"}, {"name": "Chi Spacca", "hood": "Hancock Park", "cuisine": "Italian", "price": "$$$", "rank": 38, "address": "6610 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.083399, "lng": -118.338748, "src": "census"}, {"name": "Kismet", "hood": "Los Feliz", "cuisine": "Californian", "price": "$$", "rank": 37, "address": "4648 Hollywood Blvd, Los Angeles, CA 90027", "website": null, "note": null, "confidence": "high", "lat": 34.100375, "lng": -118.290581, "src": "census"}, {"name": "Camélia", "hood": "Downtown L.A.", "cuisine": "French", "price": "$$$", "rank": 36, "address": "1850 Industrial St, Los Angeles, CA 90021", "website": null, "note": null, "confidence": "high", "lat": 34.035723, "lng": -118.23341, "src": "census"}, {"name": "Pasjoli", "hood": "Santa Monica", "cuisine": "French", "price": "$$$", "rank": 35, "address": "2732 Main St, Santa Monica, CA 90405", "website": "https://www.pasjoli.com/", "note": null, "confidence": "high", "lat": 34.000669, "lng": -118.482315, "src": "census"}, {"name": "Bavel", "hood": "Downtown L.A.", "cuisine": "Middle Eastern", "price": "$$$", "rank": 34, "address": "500 Mateo St, Los Angeles, CA 90013", "website": "http://baveldtla.com/", "note": null, "confidence": "high", "lat": 34.041493, "lng": -118.233007, "src": "census"}, {"name": "Sonoratown", "hood": "Mid-Wilshire", "cuisine": "Sonoran", "price": "$", "rank": 33, "address": "5610 San Vicente Blvd, Los Angeles, CA 90019", "website": "https://www.sonoratown.com", "note": null, "confidence": "high", "lat": 34.054035, "lng": -118.355234, "src": "census"}, {"name": "Saffy's", "hood": "East Hollywood", "cuisine": "Middle Eastern", "price": "$$$", "rank": 32, "address": "4845 Fountain Ave, Los Angeles, CA 90029", "website": "https://www.saffysla.com", "note": null, "confidence": "high", "lat": 34.095475, "lng": -118.295243, "src": "census"}, {"name": "République", "hood": "Hancock Park", "cuisine": "American", "price": "$$$", "rank": 31, "address": "624 S La Brea Ave, Los Angeles, CA 90036", "website": "https://republiquela.com", "note": null, "confidence": "high", "lat": 34.06426, "lng": -118.343951, "src": "census"}, {"name": "Electric Bleu", "hood": "Mar Vista", "cuisine": "French", "price": "$$", "rank": 30, "address": "3523 S Centinela Ave, Los Angeles, CA 90066", "website": null, "note": null, "confidence": "high", "lat": 34.009935, "lng": -118.438408, "src": "census"}, {"name": "Little Fish Melrose Hill", "hood": "Echo Park", "cuisine": "Breakfast/Lunch", "price": "$", "rank": 29, "address": "5035 Melrose Ave, Los Angeles, CA 90038", "website": null, "note": null, "confidence": "high", "lat": 34.083565, "lng": -118.309864, "src": "census"}, {"name": "Baby Bistro", "hood": "Chinatown", "cuisine": "European", "price": "$$", "rank": 28, "address": "1027 Alpine St, Los Angeles, CA 90012", "website": "https://babybistrola.com", "note": "Moved from its Koreatown pop-up to the Alpine St courtyard near Chinatown.", "confidence": "medium", "lat": 34.065291, "lng": -118.24689, "src": "census"}, {"name": "Sora Craft Kitchen", "hood": "Downtown L.A.", "cuisine": "Turkish", "price": "$$", "rank": 27, "address": "1109 E 12th St, Los Angeles, CA 90021", "website": null, "note": "Reported closing this location due to building problems. Check before going.", "confidence": "low", "lat": 34.0312, "lng": -118.247566, "src": "census"}, {"name": "Darling", "hood": "West Hollywood", "cuisine": "Wood-fired", "price": "$$$", "rank": 26, "address": "631 N Robertson Blvd, West Hollywood, CA 90069", "website": null, "note": null, "confidence": "medium", "lat": 34.08184, "lng": -118.385508, "src": "census"}, {"name": "Vespertine", "hood": "Culver City", "cuisine": "American", "price": "$$$$", "rank": 25, "address": "3599 Hayden Ave, Culver City, CA 90232", "website": "https://www.vespertine.la", "note": null, "confidence": "high", "lat": 34.024109, "lng": -118.381692, "src": "census"}, {"name": "Orsa & Winston", "hood": "Downtown L.A.", "cuisine": "Italian", "price": "$$", "rank": 24, "address": "122 W 4th St, Los Angeles, CA 90013", "website": "https://www.orsaandwinston.com", "note": null, "confidence": "high", "lat": 34.048482, "lng": -118.247872, "src": "census"}, {"name": "Azizam", "hood": "Silver Lake", "cuisine": "Persian", "price": "$", "rank": 23, "address": "2943 W Sunset Blvd, Los Angeles, CA 90026", "website": "https://www.azizamla.com", "note": null, "confidence": "high", "lat": 34.083518, "lng": -118.273786, "src": "census"}, {"name": "Mélisse", "hood": "Santa Monica", "cuisine": "American", "price": "$$$$", "rank": 22, "address": "1104 Wilshire Blvd, Santa Monica, CA 90401", "website": "https://www.melisse.com", "note": null, "confidence": "high", "lat": 34.024423, "lng": -118.491327, "src": "osm"}, {"name": "Sushi Kaneyoshi", "hood": "Downtown L.A.", "cuisine": "Japanese", "price": "$$$$", "rank": 21, "address": "250 E 1st St, B1, Los Angeles, CA 90012", "website": "https://restaurants.kaneyoshi.us", "note": null, "confidence": "medium", "lat": 34.050609, "lng": -118.241242, "src": "census"}, {"name": "Komal", "hood": "Historic South-Central", "cuisine": "Mexican", "price": "$", "rank": 20, "address": "3655 S Grand Ave, Los Angeles, CA 90007", "website": null, "note": "Inside Mercado La Paloma.", "confidence": "high", "lat": 34.017287, "lng": -118.278053, "src": "census"}, {"name": "Quarter Sheets", "hood": "Echo Park", "cuisine": "Pizza", "price": "$$", "rank": 19, "address": "1305 Portia St, Los Angeles, CA 90026", "website": null, "note": null, "confidence": "high", "lat": 34.075603, "lng": -118.254348, "src": "census"}, {"name": "Broken Spanish Comedor", "hood": "Culver City", "cuisine": "Mexican", "price": "$$", "rank": 18, "address": "12565 Washington Blvd, Culver City, CA 90066", "website": null, "note": null, "confidence": "medium", "lat": 33.996817, "lng": -118.432273, "src": "census"}, {"name": "Perilla L.A.", "hood": "Chinatown", "cuisine": "Korean", "price": "$", "rank": 17, "address": "1027 Alpine St, Building E, Los Angeles, CA 90012", "website": "https://perillala.com", "note": null, "confidence": "high", "lat": 34.065291, "lng": -118.24689, "src": "census"}, {"name": "Antico Nuovo", "hood": "Larchmont", "cuisine": "Italian", "price": "$$", "rank": 16, "address": "4653 Beverly Blvd, Los Angeles, CA 90004", "website": null, "note": null, "confidence": "medium", "lat": 34.076299, "lng": -118.310672, "src": "census"}, {"name": "Henrietta", "hood": "Echo Park", "cuisine": "Californian", "price": "$$", "rank": 15, "address": "343 Glendale Blvd, Los Angeles, CA 90026", "website": null, "note": null, "confidence": "high", "lat": 34.066321, "lng": -118.260494, "src": "census"}, {"name": "Funke", "hood": "Beverly Hills", "cuisine": "Italian", "price": "$$$", "rank": 14, "address": "9388 S Santa Monica Blvd, Beverly Hills, CA 90210", "website": null, "note": null, "confidence": "high", "lat": 34.071806, "lng": -118.40151, "src": "osm"}, {"name": "Seline", "hood": "Santa Monica", "cuisine": "Californian", "price": "$$$$", "rank": 13, "address": "3110 Main St, Suite 132, Santa Monica, CA 90405", "website": null, "note": null, "confidence": "medium", "lat": 33.99789, "lng": -118.479545, "src": "census"}, {"name": "Anajak Thai", "hood": "Sherman Oaks", "cuisine": "Thai", "price": "$$", "rank": 12, "address": "14704 Ventura Blvd, Sherman Oaks, CA 91403", "website": null, "note": null, "confidence": "high", "lat": 34.151683, "lng": -118.453674, "src": "census"}, {"name": "Restaurant Ki", "hood": "Downtown L.A.", "cuisine": "Korean", "price": "$$$$", "rank": 11, "address": "111 S San Pedro St, Los Angeles, CA 90012", "website": "https://restaurantki.com", "note": null, "confidence": "high", "lat": 34.050291, "lng": -118.241037, "src": "census"}, {"name": "Alta Adams", "hood": "West Adams", "cuisine": "Breakfast/Brunch", "price": "$$", "rank": 10, "address": "5359 W Adams Blvd, Los Angeles, CA 90016", "website": null, "note": null, "confidence": "high", "lat": 34.032542, "lng": -118.359907, "src": "census"}, {"name": "Morihiro", "hood": "Echo Park", "cuisine": "Japanese", "price": "$$$$", "rank": 9, "address": "1115 Sunset Blvd, Ste 100, Los Angeles, CA 90012", "website": null, "note": "Moved in Oct 2025 from Atwater Village to The Elysian in Echo Park.", "confidence": "medium", "lat": 34.065991, "lng": -118.249424, "src": "census"}, {"name": "Providence", "hood": "Hollywood", "cuisine": "Seafood", "price": "$$$$", "rank": 8, "address": "5955 Melrose Ave, Los Angeles, CA 90038", "website": "https://providencela.com", "note": null, "confidence": "high", "lat": 34.083528, "lng": -118.330012, "src": "census"}, {"name": "Hayato", "hood": "Downtown L.A.", "cuisine": "Japanese", "price": "$$$$", "rank": 7, "address": "1320 E 7th St, Suite 126, Los Angeles, CA 90021", "website": null, "note": null, "confidence": "high", "lat": 34.036102, "lng": -118.240313, "src": "census"}, {"name": "n/naka", "hood": "Palms", "cuisine": "Japanese", "price": "$$$$", "rank": 6, "address": "3455 S Overland Ave, Los Angeles, CA 90034", "website": "https://n-naka.com", "note": null, "confidence": "high", "lat": 34.025118, "lng": -118.411989, "src": "census"}, {"name": "Baroo", "hood": "Downtown L.A.", "cuisine": "Korean", "price": "$$$", "rank": 5, "address": "905 E 2nd St, Suite 109, Los Angeles, CA 90012", "website": "https://baroolosangeles.com", "note": null, "confidence": "high", "lat": 34.047222, "lng": -118.235007, "src": "census"}, {"name": "Dunsmoor", "hood": "Glassell Park", "cuisine": "American", "price": "$$$", "rank": 4, "address": "3501 Eagle Rock Blvd, Los Angeles, CA 90065", "website": null, "note": null, "confidence": "high", "lat": 34.115779, "lng": -118.23591, "src": "census"}, {"name": "Holbox", "hood": "Historic South-Central", "cuisine": "Mexican", "price": "$$", "rank": 3, "address": "3655 S Grand Ave, Los Angeles, CA 90007", "website": null, "note": "Inside Mercado La Paloma.", "confidence": "high", "lat": 34.017287, "lng": -118.278053, "src": "census"}, {"name": "Kato", "hood": "Downtown L.A.", "cuisine": "Taiwanese", "price": "$$$$", "rank": 2, "address": "777 Alameda St, Unit 114, Los Angeles, CA 90021", "website": null, "note": null, "confidence": "high", "lat": 34.030474, "lng": -118.23896, "src": "census"}, {"name": "Lielle", "hood": "Pico-Robertson", "cuisine": "Modern", "price": "$$$$", "rank": 1, "address": "9575 W Pico Blvd, Los Angeles, CA 90035", "website": null, "note": null, "confidence": "medium", "lat": 34.055246, "lng": -118.397641, "src": "census"}];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const miles = (a, b) => {
+  const toR = d => d * Math.PI / 180, Rm = 3958.8;
+  const dLat = toR(b[0] - a[0]), dLon = toR(b[1] - a[1]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a[0])) * Math.cos(toR(b[0])) * Math.sin(dLon / 2) ** 2;
+  return 2 * Rm * Math.asin(Math.sqrt(h));
+};
+R.forEach(r => {
+  r.d = miles(HOME, [r.lat, r.lng]);
+  r.p = r.price.length;
+  r.yelp = "https://www.yelp.com/search?find_desc=" + encodeURIComponent(r.name) + "&find_loc=" + encodeURIComponent(r.address);
+  r.gmaps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(r.name + ", " + r.address);
+  r.dir = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(r.name + ", " + r.address);
+});
+
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+const map = L.map("map", { zoomControl: true }).setView(HOME, 11);
+const esri = s => `https://server.arcgisonline.com/ArcGIS/rest/services/${s}/MapServer/tile/{z}/{y}/{x}`;
+const attribution = "Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors";
+if (dark) {
+  L.tileLayer(esri("Canvas/World_Dark_Gray_Base"), { maxZoom: 16, attribution }).addTo(map);
+  L.tileLayer(esri("Canvas/World_Dark_Gray_Reference"), { maxZoom: 16 }).addTo(map);
+} else {
+  L.tileLayer(esri("World_Street_Map"), { maxZoom: 19, attribution }).addTo(map);
+}
+
+// distance rings from home
+[5, 10, 20].forEach(mi => {
+  L.circle(HOME, { radius: mi * 1609.34, color: getComputedStyle(document.documentElement).getPropertyValue("--home"), weight: 1, opacity: .45, fill: false, dashArray: "4 6", interactive: false }).addTo(map);
+  const lbl = L.latLng(HOME[0] + mi / 69.0, HOME[1]);
+  L.marker(lbl, { interactive: false, icon: L.divIcon({ className: "ring-label", html: mi + " mi", iconSize: [40, 14], iconAnchor: [20, 7] }) }).addTo(map);
+});
+
+L.marker(HOME, {
+  zIndexOffset: 2000,
+  icon: L.divIcon({ className: "", html: '<div class="homepin"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></div>', iconSize: [34, 34], iconAnchor: [17, 17] })
+}).addTo(map).bindPopup(`<div class="pop"><div class="eyebrow">Home</div><h3>Mar Vista</h3>Approximate location</div>`);
+
+const legend = L.control({ position: "bottomright" });
+legend.onAdd = () => {
+  const d = L.DomUtil.create("div", "legend");
+  d.innerHTML = [["p1", "$"], ["p2", "$$"], ["p3", "$$$"], ["p4", "$$$$"]].map(([c, l]) => `<div><span style="background:var(--${c})"></span>${l}</div>`).join("");
+  return d;
+};
+legend.addTo(map);
+
+const popupHtml = r => `<div class="pop">
+  <div class="eyebrow">#${r.rank} · ${esc(r.hood)} · ${esc(r.price)}</div>
+  <h3>${esc(r.name)}</h3>
+  <div>${esc(r.cuisine)}</div>
+  <div class="addr">${esc(r.address)}</div>
+  <div><strong>${r.d.toFixed(1)} mi</strong> from home (straight line)</div>
+  ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
+  <div class="links">
+    <a class="yelp" href="${r.yelp}" target="_blank" rel="noopener">Yelp</a>
+    <a href="${r.dir}" target="_blank" rel="noopener">Directions</a>
+    <a href="${r.gmaps}" target="_blank" rel="noopener">Google Maps</a>
+    ${r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener">Website</a>` : ""}
+  </div></div>`;
+
+R.forEach(r => {
+  r.m = L.marker([r.lat, r.lng], {
+    title: r.name, riseOnHover: true,
+    icon: L.divIcon({ className: "", html: `<div class="pin p${r.p}">${r.rank}</div>`, iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -12] })
+  }).bindPopup(() => popupHtml(r), { maxWidth: 300 });
+  r.m.on("popupopen", () => highlight(r, false));
+});
+
+let active = null;
+function highlight(r, pan) {
+  document.querySelectorAll("li.active").forEach(e => e.classList.remove("active"));
+  const li = document.getElementById("r" + r.rank);
+  if (li) { li.classList.add("active"); if (!pan) li.scrollIntoView({ block: "nearest" }); }
+  if (pan) { map.setView([r.lat, r.lng], Math.max(map.getZoom(), 13)); r.m.openPopup(); }
+  active = r;
+}
+
+const state = { q: "", prices: new Set([1, 2, 3, 4]), sort: "dist", maxd: 999 };
+function render() {
+  const q = state.q.toLowerCase();
+  const rows = R.filter(r => state.prices.has(r.p) && r.d <= state.maxd &&
+    (!q || (r.name + " " + r.cuisine + " " + r.hood + " " + r.address).toLowerCase().includes(q)))
+    .sort((a, b) => state.sort === "dist" ? a.d - b.d : a.rank - b.rank);
+  const show = new Set(rows);
+  R.forEach(r => show.has(r) ? r.m.addTo(map) : r.m.remove());
+  $("#count").textContent = `${rows.length} of ${R.length} shown`;
+  $("#list").innerHTML = rows.map(r => `<li id="r${r.rank}" tabindex="0">
+    <div class="rank">#${r.rank}</div>
+    <div class="name">${esc(r.name)}<div class="meta">${esc(r.cuisine)} · ${esc(r.hood)}</div></div>
+    <div class="dist">${r.d.toFixed(1)} mi<span class="price meta">${esc(r.price)}</span></div></li>`).join("");
+}
+$("#list").addEventListener("click", e => { const li = e.target.closest("li"); if (li) highlight(R.find(r => "r" + r.rank === li.id), true); });
+$("#list").addEventListener("keydown", e => { if (e.key === "Enter") e.target.closest("li")?.click(); });
+$("#q").addEventListener("input", e => { state.q = e.target.value; render(); });
+$("#sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+$("#maxd").addEventListener("change", e => { state.maxd = +e.target.value; render(); });
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  const p = +b.dataset.p, on = b.getAttribute("aria-pressed") === "true";
+  b.setAttribute("aria-pressed", String(!on));
+  on ? state.prices.delete(p) : state.prices.add(p);
+  render();
+}));
+render();
+map.fitBounds(L.latLngBounds(R.map(r => [r.lat, r.lng]).concat([HOME])).pad(0.05));
+</script>
+</body>
+</html>
